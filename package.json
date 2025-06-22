@@ -1,0 +1,19 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "Backend Project",
+  "keywords": [
+    "javascript",
+    "backend",
+    "project",
+    "youtube",
+    "clone"
+  ],
+  "license": "ISC",
+  "author": "Nikhil Suresh God",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
