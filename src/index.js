@@ -1,16 +1,27 @@
 // require('dotenv').config({path: './env'})
 import dotenv from 'dotenv'
-
-
-         // 1st way to connect mongooDB : connection from another file and exported in 1st executed file of project
-         
 import connectDB from './db/index.js'
+import app from "./app.js"
 dotenv.config(
     {
-        pat : './env'
+        path : './env'
     });
-connectDB();
+    
+    // 1st way to connect mongooDB : connection from another file and exported in 1st executed file of project       
+connectDB()
+.then(()=>{
+      app.on('error' , (error)=>{
+        console.log("error from express after DB connect (src/index)");
+        throw error;
+      })
 
+       app.listen(process.env.PORT ||  8000  ,()=>{
+          console.log(`server is running at port : ${process.env.PORT}`)
+       })
+})
+.catch( (error)=>{
+    console.log("mongoDB connection is FAILED (src/index) " , error);
+})
 
 
 
