@@ -27,3 +27,24 @@ step 3- Creating models
  NPM packages ->  1. mongoose-aggregate-paginate-v2
                   2. bcrypt or bcryptjs  // increapt decreapt password
                   3. JWT  // used to create tokens 
+--------------------------------------------------------------------------
+step 4-  uploding file in 2 step
+ - file is taken by user and kept for some time on server after some time it will uploaded on nother server
+ - write middleware using multer to get file from user and store temporary in diskstorage
+
+NPM packages ->  1.cloudinary    // to store file on clodinary website
+                 2.multer        // to handle file on server
+
+
+<!-- /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+above 4 steps are setup for project or we say that makin files that will be used further
+NOW,
+   from next steps we do actual functioning of project (routes and controllers ) with the help of files that was created in above 4 steps
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+
+
+
+
+
