@@ -5,7 +5,7 @@ import app from "./app.js"
 dotenv.config(
     {
         path : './env'
-    });
+    })
     
     // 1st way to connect mongooDB : connection from another file and exported in 1st executed file of project       
 connectDB()

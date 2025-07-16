@@ -44,7 +44,11 @@ NOW,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
 
+step 5: writing routes and controllers
 
+ - erite the controllers in controller folder
+ - write routes file in Route folder
+ - import routes in app.js file  
 
 
 
