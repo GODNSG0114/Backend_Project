@@ -1,8 +1,8 @@
 import {asynHandler} from "../utils/asynHandler.js"
-import {ApiError} from "..utils/ApiError.js"
+import { ApiError } from "../utils/API_error.js"
 import { User } from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
-import { ApiResponse } from "../utils/Api_response.js"
+import ApiResponse from "../utils/Api_response.js"
 const registerUser = asynHandler( async (req,res)=>{
     /*    1. get user detail from frontend
           2. Validation - not empty
