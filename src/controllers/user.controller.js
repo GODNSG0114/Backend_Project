@@ -2,8 +2,26 @@ import { asynHandler } from "../utils/asynHandler.js"
 import { ApiError } from "../utils/API_error.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
-import ApiResponse from "../utils/Api_response.js"
 import fs from "fs"
+import apiResponse from "../utils/Api_response.js"
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false });
+        //    console.log("generateModule" , userAccessToken)
+        //   console.log("generateModule" ,userRefreshToken)
+        return { accessToken, refreshToken }
+
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating access token")
+    }
+}
+
+
 const registerUser = asynHandler(async (req, res) => {
     /*    1. get user detail from frontend
           2. Validation - not empty
@@ -83,4 +101,81 @@ const registerUser = asynHandler(async (req, res) => {
     )
 })
 
-export { registerUser };
+const loginUser = asynHandler(async (req, res) => {
+    /* 
+      1. took email and password from req.body 
+         a. if email or password is empty then throw error
+      2. find user in DB 
+      3. password check
+      4. else throw error
+      5.if password matched then generate access and refress token 
+      6. send cookie (cookie contain access and refresh token)
+    */
+
+    const { email, username, password } = req.body
+    if (email === "" && username === "") {
+        throw new ApiError(400, "username or password is required")
+    }
+    // checking user present in DB or not 
+    const user = await User.findOne({
+        $or: [{ email }, { username }]
+    })
+    if (!user) throw new ApiError(400, "User does not exist")
+    // checking password 
+    const ispasswordvalid = await user.isPasswordCorrect(password)
+    if (!ispasswordvalid) {
+        throw new ApiError(400, "Wrong password")
+    }
+
+    //  make access and refresh token
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+
+    // send through cookies
+    const option = {
+        httpOnly: true,   // cookies are modifiable bidefault 
+        secure: true     // but due to this two options it only modifiable in backend
+    }
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, option)
+        .cookie("refreshToken", refreshToken, option)
+        .json(
+            new apiResponse(200, {
+                user: loggedInUser, accessToken, refreshToken
+            },
+                "user logged in successfully"
+            )
+        )
+
+})
+
+const logoutUser = asynHandler(async (req, res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: { refreshToken: undefined }
+        },
+        {
+            new: true
+        }
+    )
+    const option = {
+        httpOnly: true,   // cookies are modifiable bidefault 
+        secure: true     // but due to this two options it only modifiable in backend
+    }
+    return res
+        .status(200)
+        .clearCookie("accessToken", option)
+        .clearCookie("refreshToken", option)
+        .json(
+            new apiResponse(200, {}, "Logout successfully")
+        )
+})
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+
+};
