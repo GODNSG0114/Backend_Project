@@ -3,12 +3,13 @@ import { ApiError } from "../utils/API_error.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import fs from "fs"
+import  jwt  from "jsonwebtoken"
 import apiResponse from "../utils/Api_response.js"
 const generateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken()
-        const refreshToken = user.generateRefreshToken()
+        const refreshToken = user.generateRefreshToken() 
 
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false });
@@ -97,7 +98,7 @@ const registerUser = asynHandler(async (req, res) => {
     }
     // send response
     return res.status(201).json(
-        new ApiResponse(200, createdUser, "User Register Successfuly")
+        new apiResponse(200, createdUser, "User Register Successfuly")
     )
 })
 
@@ -173,9 +174,49 @@ const logoutUser = asynHandler(async (req, res) => {
             new apiResponse(200, {}, "Logout successfully")
         )
 })
+
+const refreshAccessToken = asynHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Unauthorized request")
+    }
+
+    const decodedToken =  jwt.verify(incomingRefreshToken, REFRESH_TOKEN_SECRET)
+    const user = await User.findById(decodedToken?._id)
+    if (!user) {
+        throw new ApiError(401, "Invalid refresh token")
+    }
+
+    if (incomingRefreshToken !== user?.refreshToken) {
+        throw new apiResponse(401, "refresh token is expired or used");
+    }
+
+    //  make access and refresh token
+    const { accessToken,newrefreshToken } = await generateAccessAndRefreshToken(user._id)
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+    // send through cookies
+    const option = {
+        httpOnly: true,   // cookies are modifiable bidefault 
+        secure: true     // but due to this two options it only modifiable in backend
+    }
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, option)
+        .cookie("refreshToken", newrefreshToken, option)
+        .json(
+            new apiResponse(200, {
+                user: loggedInUser, accessToken, refreshToken
+            },
+                "Access token refreshed succesfully"
+            )
+        )
+
+
+})
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+   refreshAccessToken
 
 };
