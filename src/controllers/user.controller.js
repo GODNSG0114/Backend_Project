@@ -6,6 +6,8 @@ import fs from "fs"
 import jwt from "jsonwebtoken"
 import apiResponse from "../utils/Api_response.js"
 import { subscribe } from "diagnostics_channel"
+import mongoose from "mongoose"
+import { pipeline } from "stream"
 const generateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
@@ -323,37 +325,86 @@ const getuserChannelprofile = asynHandler(async (req, res) => {
                 subscriberCount: {
                     $size: "$subscribers"
                 },
-               channelSubscribedCount :{
-                $size: "$subscribedTo"
-               },
-               isSubscribed:{
-                 if:{$in :[req.user?._id , "$subcsribers.subscriber"]},
-                 then : true,
-                 else : false
-               }
+                channelSubscribedCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    if: { $in: [req.user?._id, "$subcsribers.subscriber"] },
+                    then: true,
+                    else: false
+                }
             }
         },
         {
-            $project:{
-                fullname:1,
-                username:1,
-                subscriberCount :1,
-                channelSubscribedCount:1,
-                avatar:1,
-                coverImage:1,
+            $project: {
+                fullname: 1,
+                username: 1,
+                subscriberCount: 1,
+                channelSubscribedCount: 1,
+                avatar: 1,
+                coverImage: 1,
                 email: 1,
 
 
             }
         }
     ])
-    
-    if(!channel.length){
+
+    if (!channel.length) {
         throw new ApiError(400, "channel does not exist");
     }
     return res
-          .status(200)
-          .json(new apiResponse(200 , channel[0] , "user channel fetched successfully"))
+        .status(200)
+        .json(new apiResponse(200, channel[0], "user channel fetched successfully"))
+})
+
+const getWatchHistory = asynHandler(async (req, res) => {
+    const user = await User.aggregate(
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "video",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "user",
+                            localfield: "Owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: {
+                                $project: {
+                                    fullname: 1,
+                                    username: 1,
+                                    avatar: 1
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    )
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(200, user[0].watchHistory, "watch History fetched successfully")
+        )
 })
 export {
     registerUser,
@@ -364,6 +415,7 @@ export {
     getCurrentUser,
     updateUserAvatar,
     updateUserCoverImage,
-    getuserChannelprofile
+    getuserChannelprofile,
+    getWatchHistory
 
 };

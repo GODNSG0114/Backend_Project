@@ -46,9 +46,12 @@ NOW,
 
 step 5: writing routes and controllers
 
- - erite the controllers in controller folder
+ - werite the controllers in controller folder
  - write routes file in Route folder
  - import routes in app.js file  
 
+
+ NOTE : in normal calls of DB , when we call a object then mongoodb provide ony id string but mongoose add prefix (objectId) and complete the id 
+       but in aggregation pipelines this direct contact with mongooDB so thats why mongoose not added prefix so we have to make call which shown in /controllers/user.controller.js  line number 363(+-)
 
 
